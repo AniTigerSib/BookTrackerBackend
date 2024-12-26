@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int                  @id @default(autoincrement())
+  login              String               @unique
+  password           String               @db.VarChar(64)
+  salt               String               @db.VarChar(64)
+  refresh            String?              @db.VarChar(64)
+  BooklistbookOnUser BooklistbookOnUser[]
+  Ratings            Ratings?
+  ReadBooksOnUser    ReadBooksOnUser[]
+}
+
+model Category {
+  id               Int                @id @default(autoincrement())
+  name             String
+  CategoriesOnBook CategoriesOnBook[]
+}
+
+model Book {
+  id                 Int                  @id @default(autoincrement())
+  name               String
+  cover              String               @db.VarChar(200)
+  author             String               @db.VarChar(200)
+  language           String               @db.VarChar(50)
+  year               Int
+  originalName       String
+  pages              Int
+  abstract           String
+  avgRating          Float
+  totalRatings       Int
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @default(now())
+  BooklistbookOnUser BooklistbookOnUser[]
+  CategoriesOnBook   CategoriesOnBook[]
+  Ratings            Ratings[]
+  ReadBooksOnUser    ReadBooksOnUser[]
+}
+
+model Ratings {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  bookId    Int
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CategoriesOnBook {
+  bookId     Int
+  categoryId Int
+  assignedAt DateTime @default(now())
+  book       Book     @relation(fields: [bookId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@id([bookId, categoryId])
+}
+
+model ReadBooksOnUser {
+  bookId     Int
+  userId     Int
+  assignedAt DateTime @default(now())
+  book       Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, bookId])
+}
+
+model BooklistbookOnUser {
+  bookId     Int
+  userId     Int
+  assignedAt DateTime @default(now())
+  book       Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, bookId])
+}
