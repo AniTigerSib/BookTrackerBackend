@@ -12,7 +12,7 @@ model User {
   login              String               @unique
   password           String               @db.VarChar(64)
   salt               String               @db.VarChar(64)
-  refresh            String?              @db.VarChar(64)
+  refreshToken       String?              @db.VarChar(64)
   BooklistbookOnUser BooklistbookOnUser[]
   Ratings            Ratings?
   ReadBooksOnUser    ReadBooksOnUser[]
@@ -37,7 +37,7 @@ model Book {
   avgRating          Float
   totalRatings       Int
   createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
   BooklistbookOnUser BooklistbookOnUser[]
   CategoriesOnBook   CategoriesOnBook[]
   Ratings            Ratings[]
@@ -50,7 +50,7 @@ model Ratings {
   bookId    Int
   rating    Int
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
