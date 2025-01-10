@@ -12,7 +12,7 @@ model User {
   login              String               @unique
   password           String               @db.VarChar(64)
   salt               String               @db.VarChar(64)
-  refreshToken       String?              @db.VarChar(64)
+  refreshToken       String?              @db.VarChar(256)
   BooklistbookOnUser BooklistbookOnUser[]
   Ratings            Ratings?
   ReadBooksOnUser    ReadBooksOnUser[]

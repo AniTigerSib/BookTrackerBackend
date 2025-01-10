@@ -2,12 +2,20 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
-import { User, UserPayload } from '../types';
+import { User, UserPayload, AuthError } from '../types';
 
 const prisma = new PrismaClient();
 
 export class AuthService {
     static async registerUser(login: string, password: string) {
+        const checkedUser = await prisma.user.findUnique({
+            where: {
+                login
+            }
+        });
+        if (checkedUser !== null && checkedUser !== undefined) {
+            throw new AuthError('User already exists');
+        }
         const salt = await bcrypt.genSalt(16);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -26,13 +34,13 @@ export class AuthService {
         const user = await prisma.user.findUnique({ where: { login } });
 
         if (!user) {
-            throw new Error('User not found');
+            throw new AuthError('User not found');
         }
 
         const validPassword = await bcrypt.compare(password, user.password);
 
         if (!validPassword) {
-            throw new Error('Invalid password');
+            throw new AuthError('Invalid password');
         }
 
         return this.generateTokens(user);
@@ -53,9 +61,10 @@ export class AuthService {
                 throw new Error('Invalid refresh token');
             }
 
-            return this.generateTokens(user);
+            return this.generateTokens(user, false);
         } catch (error) {
-            throw new Error('Invalid refresh token');
+            console.log(error);
+            throw new AuthError('Invalid refresh token');
         }
     }
 
@@ -66,7 +75,7 @@ export class AuthService {
         });
     }
 
-    private static async generateTokens(user: User) {
+    private static async generateTokens(user: User, generateRefresh: boolean = true) {
         const payload: UserPayload = {
             id: user.id,
             login: user.login,
@@ -74,19 +83,20 @@ export class AuthService {
 
         const accessToken = jwt.sign(payload, config.accessTokenSecret, {
             expiresIn: config.accessTokenExpiration,
+            algorithm: 'HS256',
         });
 
         let refreshToken = user.refreshToken;
-        if (refreshToken === null) {
+        if (generateRefresh) {
             refreshToken = jwt.sign(payload, config.refreshTokenSecret, {
                 expiresIn: config.refreshTokenExpiration,
+                algorithm: 'HS256',
+            });
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { refreshToken },
             });
         }
-
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { refreshToken },
-        });
 
         return { accessToken, refreshToken };
     }

@@ -15,3 +15,5 @@ export interface User {
     salt: string;
     refreshToken: string | null;
 }
+
+export class AuthError extends Error {}
