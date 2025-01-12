@@ -8,6 +8,8 @@ export class AuthController {
         try {
             const { login, password } = req.body;
             const tokens = await AuthService.registerUser(login, password);
+            const now = new Date();
+            console.log(`[${now.toLocaleTimeString()}] User ${login} registered successfully.`);
             res.status(StatusCodes.CREATED).json(tokens);
         } catch (error) {
             if (error instanceof AuthError) {
@@ -23,6 +25,8 @@ export class AuthController {
         try {
             const { login, password } = req.body;
             const tokens = await AuthService.loginUser(login, password);
+            const now = new Date();
+            console.log(`[${now.toLocaleTimeString()}] User ${login} has been logged in.`);
             res.status(StatusCodes.OK).json(tokens);
         } catch (error) {
             if (error instanceof AuthError) {
@@ -38,6 +42,8 @@ export class AuthController {
         try {
             const { refreshToken } = req.body;
             const tokens = await AuthService.refreshToken(refreshToken);
+            const now = new Date();
+            console.log(`[${now.toLocaleTimeString()}] User received new access token.`);
             res.status(StatusCodes.OK).json(tokens);
         } catch (error) {
             if (error instanceof AuthError) {
@@ -56,6 +62,8 @@ export class AuthController {
                 res.status(StatusCodes.NOT_FOUND).json({ message: ReasonPhrases.NOT_FOUND });
             } else {
                 await AuthService.logout(userId);
+                const now = new Date();
+                console.log(`[${now.toLocaleTimeString()}] User logged out.`);
                 res.status(StatusCodes.OK).json({ message: 'Logged out successfully' });
             }
         } catch (error) {
