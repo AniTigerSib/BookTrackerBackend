@@ -24,7 +24,7 @@ export interface Book {
 }
 
 export interface BookExtended extends Book {
-    category: number[];
+    category: string;
     author: string;
     language: string;
     year: number;

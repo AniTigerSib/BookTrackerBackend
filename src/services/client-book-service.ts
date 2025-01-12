@@ -23,11 +23,7 @@ const bookExtendedSelect = {
     pages: true,
     abstract: true,
     avgRating: true,
-    CategoriesOnBook: {
-        select: {
-            categoryId: true,
-        },
-    },
+    category: true,
 } as const;
 
 // Create a type from our select object
@@ -41,52 +37,82 @@ type BookSelect = Prisma.BookGetPayload<{
 
 export class ClientBookService {
     static async getAllBooks(): Promise<BookByCategory[]> {
-        const res = await prisma.category.findMany({
+        const booksByCat = await prisma.category.findMany({
             where: {
-                CategoriesOnBook: {
+                books: {
                     some: {}
                 }
             },
             include: {
-                CategoriesOnBook: {
-                    select: {
-                        book: {
-                            select: bookSelect,
-                        }
-                    }
+                books: {
+                    select: bookSelect
                 }
             }
         });
-
-        if (!res) return [];
-
-        let booksByCategory: BookByCategory[] = [];
-
-        for (const cat of res) {
-            const { CategoriesOnBook, ...categoryData } = cat;
-            booksByCategory.push({
-                ...categoryData,
-                books: CategoriesOnBook.map(c => c.book)
-            });
-        }
-
-        return booksByCategory;
+        const otherBooks = await prisma.book.findMany({
+            where: {
+                categoryId: 0
+            },
+            select: bookSelect
+        });
+        booksByCat.push({
+            id: 0,
+            name: "",
+            books: otherBooks
+        });
+        return booksByCat;
     }
 
     static async getBookById(id: number): Promise<BookExtended | null> {
         const book = await prisma.book.findUnique({
             where: { id },
-            select: bookExtendedSelect,
+            select: bookExtendedSelect
         });
 
         if (!book) return null;
 
-        const { CategoriesOnBook, ...bookData } = book;
+        const { category, ...bookData } = book;
 
         return {
             ...bookData,
-            category: CategoriesOnBook.map(c => c.categoryId),
+            category: category.name,
         } satisfies BookExtended;
+    }
+
+    static async updateBookRating(bookId: number, userId: number, rating: number) {
+        if (rating < 0 || rating > 10) {
+            throw new BookServiceError(`Rating can't be more than 10 or less than 0. Given: ${rating}`);
+        }
+        return prisma.$transaction(async (tx) => {
+            const user = await prisma.user.findUnique({
+                where: { id: userId }
+            });
+            if (!user) {
+                throw new BookServiceError(`User with id: ${userId} not found`);
+            }
+
+            const book = await prisma.book.findUnique({
+                where: { id: bookId }
+            });
+            if (!book) {
+                throw new BookServiceError(`Book with id: ${bookId} not found`);
+            }
+
+            return prisma.ratings.upsert({
+                where: {
+                    userId,
+                    bookId
+                },
+                update: {
+                    rating
+                },
+                create: {
+                    userId,
+                    bookId,
+                    rating
+                }
+            });
+        });
     }
 
     static async updateBooklist(bookId: number, userId: number) {
