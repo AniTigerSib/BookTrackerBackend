@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client'
-import {blUpdateRes, BookByCategory, BookExtended, BookServiceError} from "../types";
+import {blUpdateRes, Book, BookByCategory, BookExtended, BookServiceError} from "../types";
 
 const prisma = new PrismaClient();
 
@@ -36,7 +36,7 @@ type BookSelect = Prisma.BookGetPayload<{
 }>;
 
 export class ClientBookService {
-    static async getAllBooks(): Promise<BookByCategory[]> {
+    static async getBooksWithCategories(): Promise<BookByCategory[]> {
         const booksByCat = await prisma.category.findMany({
             where: {
                 books: {
@@ -61,6 +61,31 @@ export class ClientBookService {
             books: otherBooks
         });
         return booksByCat;
+    }
+
+    static async getAllBooks(substring: string = ""): Promise<Book[]> {
+        return prisma.book.findMany({
+            where: {
+                OR: [
+                    {
+                        name: {
+                            contains: substring
+                        }
+                    },
+                    {
+                        abstract: {
+                            contains: substring
+                        }
+                    },
+                    {
+                        author: {
+                            contains: substring
+                        }
+                    }
+                ]
+            },
+            select: bookSelect
+        });
     }
 
     static async getBookById(id: number): Promise<BookExtended | null> {
@@ -110,12 +135,17 @@ export class ClientBookService {
                     userId,
                     bookId,
                     rating
+                },
+                select: {
+                    userId: true,
+                    bookId: true,
+                    rating: true
                 }
             });
         });
     }
 
-    static async updateBooklist(bookId: number, userId: number) {
+    static async updateBooklist(bookId: number, userId: number): Promise<blUpdateRes> {
         return prisma.$transaction(async (tx) => {
             const user = await prisma.user.findUnique({
                 where: { id: userId }
@@ -168,7 +198,7 @@ export class ClientBookService {
         });
     }
 
-    static async updateRead(bookId: number, userId: number) {
+    static async updateRead(bookId: number, userId: number): Promise<blUpdateRes> {
         return prisma.$transaction(async (tx) => {
             const user = await prisma.user.findUnique({
                 where: { id: userId }

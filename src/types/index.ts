@@ -33,6 +33,24 @@ export interface BookExtended extends Book {
     abstract: string;
 }
 
+export interface BookUpdatable {
+    name: string;
+    cover: string;
+    avgRating: number;
+    category: number;
+    author: string;
+    language: string;
+    year: number;
+    originalName: string;
+    pages: number;
+    abstract: string;
+}
+
+export interface Category {
+    id: number,
+    name: string;
+}
+
 export interface BookByCategory {
     id: number;
     name: string;

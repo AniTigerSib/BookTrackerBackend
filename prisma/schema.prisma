@@ -15,7 +15,7 @@ model User {
   refreshToken       String?              @db.VarChar(256)
   isAdmin            Boolean              @default(false)
   BooklistbookOnUser BooklistbookOnUser[]
-  Ratings            Ratings?
+  Ratings            Ratings[]
   ReadBooksOnUser    ReadBooksOnUser[]
 }
 
@@ -35,8 +35,8 @@ model Book {
   originalName       String
   pages              Int
   abstract           String
-  avgRating          Float
-  totalRatings       Int
+  avgRating          Float                @default(0)
+  totalRatings       Int                  @default(0)
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   categoryId         Int                  @default(0)
@@ -48,7 +48,7 @@ model Book {
 
 model Ratings {
   id        Int      @id @default(autoincrement())
-  userId    Int      @unique
+  userId    Int
   bookId    Int
   rating    Int
   createdAt DateTime @default(now())
