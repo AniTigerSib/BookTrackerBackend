@@ -11,7 +11,7 @@ declare global {
         }
     }
 }
-
+// TODO: Add check of that user is still logged in (refresh token is still in database)
 export const authenticateToken = (
     req: Request,
     res: Response,

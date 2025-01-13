@@ -104,6 +104,52 @@ export class ClientBookService {
         } satisfies BookExtended;
     }
 
+    static async getBooklist(userId: number): Promise<Book[]> {
+        return prisma.$transaction(async (tx) => {
+            const user = await prisma.user.findUnique({
+                where: { id: userId }
+            });
+            if (!user) {
+                throw new BookServiceError(`User with id: ${userId} not found`);
+            }
+
+            const booklist = await prisma.booklistbookOnUser.findMany({
+                where: {
+                    userId
+                },
+                include: {
+                    book: {
+                        select: bookSelect
+                    }
+                }
+            });
+            return booklist.map(val => val.book);
+        });
+    }
+
+    static async getRead(userId: number): Promise<Book[]> {
+        return prisma.$transaction(async (tx) => {
+            const user = await prisma.user.findUnique({
+                where: { id: userId }
+            });
+            if (!user) {
+                throw new BookServiceError(`User with id: ${userId} not found`);
+            }
+
+            const booklist = await prisma.readBooksOnUser.findMany({
+                where: {
+                    userId
+                },
+                include: {
+                    book: {
+                        select: bookSelect
+                    }
+                }
+            });
+            return booklist.map(val => val.book);
+        });
+    }
+
     static async updateBookRating(bookId: number, userId: number, rating: number) {
         if (rating < 0 || rating > 10) {
             throw new BookServiceError(`Rating can't be more than 10 or less than 0. Given: ${rating}`);
@@ -125,8 +171,10 @@ export class ClientBookService {
 
             return prisma.ratings.upsert({
                 where: {
-                    userId,
-                    bookId
+                    userId_bookId: {
+                        userId,
+                        bookId
+                    }
                 },
                 update: {
                     rating

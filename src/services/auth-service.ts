@@ -69,6 +69,7 @@ export class AuthService {
     }
 
     static async logout(userId: number) {
+        // TODO: Fix endless logouting and with not actual tokens
         await prisma.user.update({
             where: { id: userId },
             data: { refreshToken: null },

@@ -47,7 +47,6 @@ model Book {
 }
 
 model Ratings {
-  id        Int      @id @default(autoincrement())
   userId    Int
   bookId    Int
   rating    Int
@@ -55,6 +54,8 @@ model Ratings {
   updatedAt DateTime @updatedAt
   book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, bookId])
 }
 
 model ReadBooksOnUser {

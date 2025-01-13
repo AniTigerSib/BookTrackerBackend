@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import {config} from "./config";
 import authRoutes from "./routes/auth-routes";
+import bookRoutes from "./routes/book-routes";
 import {notFound} from "./middleware/not-found";
 import {errorHandlerMiddleware} from "./middleware/error-handler";
 
@@ -11,6 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/client', bookRoutes);
 
 // app.use(express.urlencoded({ extended: true }));
 // app.use(express.static("public"));

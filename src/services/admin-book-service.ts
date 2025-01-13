@@ -1,6 +1,5 @@
 import {PrismaClient} from "@prisma/client";
-import { Prisma } from '@prisma/client'
-import {Book, BookExtended, BookServiceError, BookUpdatable, Category} from "../types";
+import {BookExtended, BookServiceError, BookUpdatable, Category} from "../types";
 
 const prisma = new PrismaClient();
 
