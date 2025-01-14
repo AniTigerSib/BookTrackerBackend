@@ -3,6 +3,9 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { TokenPayload } from '../types';
 import { StatusCodes } from 'http-status-codes'
+import {PrismaClient} from '@prisma/client'
+
+const prisma = new PrismaClient();
 
 declare global {
     namespace Express {
@@ -12,7 +15,7 @@ declare global {
     }
 }
 // TODO: Add check of that user is still logged in (refresh token is still in database)
-export const authenticateToken = (
+export const authenticateToken = async (
     req: Request,
     res: Response,
     next: NextFunction
@@ -28,10 +31,22 @@ export const authenticateToken = (
                 token,
                 config.accessTokenSecret
             ) as TokenPayload;
-            req.user = decoded;
-            next();
+            const user = await prisma.user.findUnique({
+                where: {id: decoded.id},
+                select: {id: true, login: true, refreshToken: true}
+            });
+
+            if (!user || !user.refreshToken) {
+                res.status(StatusCodes.UNAUTHORIZED).json({ message: 'User not validated' });
+            } else {
+                req.user = decoded;
+                next();
+            }
         } catch (error) {
-            res.status(StatusCodes.FORBIDDEN).json({ message: 'Invalid or expired token' });
+            if (error instanceof jwt.TokenExpiredError) {
+                res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Token has expired' });
+            }
+            res.status(StatusCodes.FORBIDDEN).json({ message: 'Invalid token' });
         }
     }
 }
