@@ -30,7 +30,7 @@ export class AuthController {
             res.status(StatusCodes.OK).json(tokens);
         } catch (error) {
             if (error instanceof AuthError) {
-                res.status(StatusCodes.UNAUTHORIZED).json({ message: (error as Error).message });
+                res.status(StatusCodes.FORBIDDEN).json({ message: (error as Error).message });
             } else {
                 next(error);
                 // throw new Error(`User login failed. Error: ${(error as Error).message}`);
@@ -47,7 +47,7 @@ export class AuthController {
             res.status(StatusCodes.OK).json(tokens);
         } catch (error) {
             if (error instanceof AuthError) {
-                res.status(StatusCodes.UNAUTHORIZED).json({ message: (error as Error).message });
+                res.status(StatusCodes.FORBIDDEN).json({ message: (error as Error).message });
             } else {
                 next(error);
                 // throw new Error(`User refresh failed. Error: ${(error as Error).message}`);
@@ -67,12 +67,7 @@ export class AuthController {
                 res.status(StatusCodes.OK).json({ message: 'Logged out successfully' });
             }
         } catch (error) {
-            if (error instanceof AuthError) {
-                res.status(StatusCodes.BAD_REQUEST).json({ message: (error as Error).message });
-            } else {
-                next(error);
-                // throw new Error(`User logout failed. Error: ${(error as Error).message}`);
-            }
+            next(error);
         }
     }
 }

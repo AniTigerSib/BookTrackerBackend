@@ -57,19 +57,16 @@ export class AuthService {
                 where: { id: decoded.id },
             });
 
-            if (!user || user.refreshToken !== refreshToken) {
-                throw new Error('Invalid refresh token');
+            if (!(!user || user.refreshToken !== refreshToken)) {
+                return this.generateTokens(user, false);
             }
-
-            return this.generateTokens(user, false);
+            throw new AuthError('Invalid refresh token');
         } catch (error) {
-            console.log(error);
             throw new AuthError('Invalid refresh token');
         }
     }
 
     static async logout(userId: number) {
-        // TODO: Fix endless logouting and with not actual tokens
         await prisma.user.update({
             where: { id: userId },
             data: { refreshToken: null },
