@@ -27,7 +27,7 @@ export class AuthService {
             },
         });
 
-        return this.generateTokens(user);
+        return this.generateTokens(user, true, false);
     }
 
     static async loginUser(login: string, password: string) {
@@ -73,7 +73,7 @@ export class AuthService {
         });
     }
 
-    private static async generateTokens(user: User, generateRefresh: boolean = true) {
+    private static async generateTokens(user: User, generateRefresh: boolean = true, updateDatabase: boolean = true) {
         const payload: UserPayload = {
             id: user.id,
             login: user.login,
@@ -90,10 +90,12 @@ export class AuthService {
                 expiresIn: config.refreshTokenExpiration,
                 algorithm: 'HS256',
             });
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { refreshToken },
-            });
+            if (updateDatabase) {
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: { refreshToken },
+                });
+            }
         }
 
         return { accessToken, refreshToken };

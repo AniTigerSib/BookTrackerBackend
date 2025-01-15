@@ -7,10 +7,10 @@ const router = Router();
 router.get('/books', authenticateToken, ClientBookController.getBooksMain);
 router.get('/books/search', authenticateToken, ClientBookController.searchBooks);
 router.get('/books/:id', authenticateToken, ClientBookController.getBookById);
-router.get('/books/booklist', authenticateToken, ClientBookController.getBooklist);
+router.get('/booklist', authenticateToken, ClientBookController.getBooklist);
+router.post('/booklist', authenticateToken, ClientBookController.booklistBook);
 router.get('/books/read', authenticateToken, ClientBookController.getRead);
-router.put('/books/rate/:id', authenticateToken, ClientBookController.rateBook);
-router.post('/books/booklist/:id', authenticateToken, ClientBookController.booklistBook);
-router.post('/books/read/:id', authenticateToken, ClientBookController.readBook);
+router.post('/books/read', authenticateToken, ClientBookController.readBook);
+router.post('/books/:id/rate', authenticateToken, ClientBookController.rateBook);
 
 export default router;

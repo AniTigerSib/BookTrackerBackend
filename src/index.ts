@@ -11,8 +11,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use('/api/auth', authRoutes);
-app.use('/api/client', bookRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/client', bookRoutes);
 
 // app.use(express.urlencoded({ extended: true }));
 // app.use(express.static("public"));

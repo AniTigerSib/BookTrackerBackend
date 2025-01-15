@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import {ClientBookService} from "../services/client-book-service";
-import { StatusCodes, ReasonPhrases } from 'http-status-codes'
-import {Book, BookServiceError} from "../types";
+import { StatusCodes } from 'http-status-codes'
+import {BookServiceError} from "../types";
 import {QuerySanitizer} from "../utils/query-sanitizer";
 
 export class ClientBookController {
@@ -22,7 +22,7 @@ export class ClientBookController {
 
     static async searchBooks(req: Request, res: Response, next: NextFunction) {
         try {
-            const search = QuerySanitizer.sanitizeString(req.query.search, {
+            const search = QuerySanitizer.sanitizeString(req.query.q, {
                 trim: true,
                 removeSpecialChars: true,
                 maxLength: 100
@@ -100,7 +100,7 @@ export class ClientBookController {
     static async rateBook(req: Request, res: Response, next: NextFunction) {
         try {
             const bookId = QuerySanitizer.sanitizeNumber(req.params.id, 1);
-            const rating = QuerySanitizer.sanitizeNumber(req.query.rating);
+            const rating = QuerySanitizer.sanitizeNumber(req.body.rating);
             const userId = req.user?.id;
             if (bookId === undefined || rating === undefined) {
                 res.status(StatusCodes.BAD_REQUEST).json({ error: `Incorrect book id or rating value.` });
@@ -123,7 +123,7 @@ export class ClientBookController {
 
     static async booklistBook(req: Request, res: Response, next: NextFunction) {
         try {
-            const bookId = QuerySanitizer.sanitizeNumber(req.params.id, 1);
+            const bookId = QuerySanitizer.sanitizeNumber(req.body.bookId, 1);
             const userId = req.user?.id;
             if (bookId === undefined) {
                 res.status(StatusCodes.BAD_REQUEST).json({ error: `Incorrect book id.` });
@@ -146,7 +146,7 @@ export class ClientBookController {
 
     static async readBook(req: Request, res: Response, next: NextFunction) {
         try {
-            const bookId = QuerySanitizer.sanitizeNumber(req.params.id, 1);
+            const bookId = QuerySanitizer.sanitizeNumber(req.body.bookId, 1);
             const userId = req.user?.id;
             if (bookId === undefined) {
                 res.status(StatusCodes.BAD_REQUEST).json({ error: `Incorrect book id.` });
