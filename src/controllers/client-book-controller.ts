@@ -7,10 +7,15 @@ import {QuerySanitizer} from "../utils/query-sanitizer";
 export class ClientBookController {
     static async getBooksMain(req: Request, res: Response, next: NextFunction) {
         try {
-            const booksByCat = await ClientBookService.getBooksWithCategories();
-            const now = new Date();
-            console.log(`[${now.toLocaleTimeString()}] User ${req.user?.id} get list of books.`);
-            res.status(StatusCodes.OK).json(booksByCat);
+            const userId = req.user?.id;
+            if (userId == undefined) {
+                next(new Error(`Can't get userId`));
+            } else {
+                const booksByCat = await ClientBookService.getBooksWithCategories(userId);
+                const now = new Date();
+                console.log(`[${now.toLocaleTimeString()}] User ${req.user?.id} get list of books.`);
+                res.status(StatusCodes.OK).json(booksByCat);
+            }
         } catch (error) {
             if (error instanceof BookServiceError) {
                 res.status(StatusCodes.BAD_REQUEST).json({ error: error.message });
@@ -27,11 +32,15 @@ export class ClientBookController {
                 removeSpecialChars: true,
                 maxLength: 100
             });
-
-            const booksFound = await ClientBookService.getAllBooks(search);
-            const now = new Date();
-            console.log(`[${now.toLocaleTimeString()}] User ${req.user?.id} get list of books with query: ${search}.`);
-            res.status(StatusCodes.OK).json(booksFound);
+            const userId = req.user?.id;
+            if (userId == undefined) {
+                next(new Error(`Can't get userId`));
+            } else {
+                const booksFound = await ClientBookService.getAllBooks(search, userId);
+                const now = new Date();
+                console.log(`[${now.toLocaleTimeString()}] User ${req.user?.id} get list of books with query: ${search}.`);
+                res.status(StatusCodes.OK).json(booksFound);
+            }
         } catch (error) {
             next(error);
         }
@@ -40,10 +49,13 @@ export class ClientBookController {
     static async getBookById(req: Request, res: Response, next: NextFunction) {
         try {
             const bookId = QuerySanitizer.sanitizeNumber(req.params.id, 1);
-            if (bookId === undefined) {
+            const userId = req.user?.id;
+            if (userId == undefined) {
+                next(new Error(`Can't get userId`));
+            } else if (bookId === undefined) {
                 res.status(StatusCodes.BAD_REQUEST).json({ error: `Incorrect book id.` });
             } else {
-                const bookFound = await ClientBookService.getBookById(bookId);
+                const bookFound = await ClientBookService.getBookById(bookId, userId);
                 const now = new Date();
                 console.log(`[${now.toLocaleTimeString()}] User ${req.user?.id} get book with id: ${bookId}.`);
                 if (bookId !== null) {

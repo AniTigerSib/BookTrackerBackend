@@ -4,39 +4,19 @@ import {blUpdateRes, Book, BookByCategory, BookExtended, BookServiceError} from 
 
 const prisma = new PrismaClient();
 
-const bookSelect = {
-    id: true,
-    name: true,
-    cover: true,
-    avgRating: true,
-} as const;
-
-// Define the select object type for better reusability and type safety
-const bookExtendedSelect = {
-    id: true,
-    name: true,
-    cover: true,
-    author: true,
-    language: true,
-    year: true,
-    originalName: true,
-    pages: true,
-    abstract: true,
-    avgRating: true,
-    category: true,
-} as const;
-
-// Create a type from our select object
-type BookExtendedSelect = Prisma.BookGetPayload<{
-    select: typeof bookExtendedSelect
-}>;
-
-type BookSelect = Prisma.BookGetPayload<{
-    select: typeof bookSelect
-}>;
+// Transform the data to match the Book interface
+const transformBooks = (books: any[], userId: number | null = null): Book[] => {
+    return books.map(book => ({
+        id: book.id,
+        name: book.name,
+        cover: book.cover,
+        avgRating: book.avgRating,
+        isRead: userId ? book.ReadBooksOnUser.length > 0 : false
+    }));
+};
 
 export class ClientBookService {
-    static async getBooksWithCategories(): Promise<BookByCategory[]> {
+    static async getBooksWithCategories(userId: number | null = null): Promise<BookByCategory[]> {
         const booksByCat = await prisma.category.findMany({
             where: {
                 books: {
@@ -45,7 +25,17 @@ export class ClientBookService {
             },
             include: {
                 books: {
-                    select: bookSelect
+                    select: {
+                        id: true,
+                        name: true,
+                        cover: true,
+                        avgRating: true,
+                        ReadBooksOnUser: userId ? {
+                            where: {
+                                userId: userId
+                            }
+                        } : false,
+                    }
                 }
             }
         });
@@ -53,18 +43,36 @@ export class ClientBookService {
             where: {
                 categoryId: 0
             },
-            select: bookSelect
+            select: {
+                id: true,
+                name: true,
+                cover: true,
+                avgRating: true,
+                ReadBooksOnUser: userId ? {
+                    where: {
+                        userId: userId
+                    }
+                } : false,
+            }
         });
-        booksByCat.push({
+
+        // Transform and combine the results
+        const result = booksByCat.map(category => ({
+            id: category.id,
+            name: category.name,
+            books: transformBooks(category.books, userId)
+        }));
+
+        result.push({
             id: 0,
-            name: "",
-            books: otherBooks
+            name: "Без категории",
+            books: transformBooks(otherBooks, userId)
         });
-        return booksByCat;
+        return result;
     }
 
-    static async getAllBooks(substring: string = ""): Promise<Book[]> {
-        return prisma.book.findMany({
+    static async getAllBooks(substring: string = "", userId: number | null = null): Promise<Book[]> {
+        const books = await prisma.book.findMany({
             where: {
                 OR: [
                     {
@@ -84,23 +92,58 @@ export class ClientBookService {
                     }
                 ]
             },
-            select: bookSelect
+            select: {
+                id: true,
+                name: true,
+                cover: true,
+                avgRating: true,
+                ReadBooksOnUser: userId ? {
+                    where: {
+                        userId: userId
+                    }
+                } : false,
+            }
         });
+        return transformBooks(books, userId);
     }
 
-    static async getBookById(id: number): Promise<BookExtended | null> {
+    static async getBookById(id: number, userId: number): Promise<BookExtended | null> {
         const book = await prisma.book.findUnique({
             where: { id },
-            select: bookExtendedSelect
+            select: {
+                id: true,
+                name: true,
+                cover: true,
+                author: true,
+                language: true,
+                year: true,
+                originalName: true,
+                pages: true,
+                abstract: true,
+                avgRating: true,
+                category: true,
+                ReadBooksOnUser: userId ? {
+                    where: {
+                        userId: userId
+                    }
+                } : false,
+                BooklistbookOnUser: userId ? {
+                    where: {
+                        userId: userId
+                    }
+                } : false
+            }
         });
 
         if (!book) return null;
 
-        const { category, ...bookData } = book;
+        const { category, ReadBooksOnUser, BooklistbookOnUser, ...bookData } = book;
 
         return {
             ...bookData,
             category: category.name,
+            isRead: userId ? ReadBooksOnUser.length > 0 : false,
+            isInBooklist: userId ? BooklistbookOnUser.length > 0 : false
         } satisfies BookExtended;
     }
 
@@ -119,11 +162,21 @@ export class ClientBookService {
                 },
                 include: {
                     book: {
-                        select: bookSelect
+                        select: {
+                            id: true,
+                            name: true,
+                            cover: true,
+                            avgRating: true,
+                            ReadBooksOnUser: userId ? {
+                                where: {
+                                    userId: userId
+                                }
+                            } : false,
+                        }
                     }
                 }
             });
-            return booklist.map(val => val.book);
+            return transformBooks(booklist.map(val => val.book), userId);
         });
     }
 
@@ -142,11 +195,21 @@ export class ClientBookService {
                 },
                 include: {
                     book: {
-                        select: bookSelect
+                        select: {
+                            id: true,
+                            name: true,
+                            cover: true,
+                            avgRating: true,
+                            ReadBooksOnUser: userId ? {
+                                where: {
+                                    userId: userId
+                                }
+                            } : false,
+                        }
                     }
                 }
             });
-            return booklist.map(val => val.book);
+            return transformBooks(booklist.map(val => val.book), userId);
         });
     }
 
@@ -193,7 +256,7 @@ export class ClientBookService {
         });
     }
 
-    static async updateBooklist(bookId: number, userId: number): Promise<blUpdateRes> {
+    static async updateBooklist(bookId: number, userId: number) {
         return prisma.$transaction(async (tx) => {
             const user = await prisma.user.findUnique({
                 where: { id: userId }
@@ -218,7 +281,7 @@ export class ClientBookService {
                 }
             });
             if (!blRecord) {
-                const result = await prisma.booklistbookOnUser.create({
+                await prisma.booklistbookOnUser.create({
                     data: {
                         book: {
                             connect: {
@@ -232,9 +295,8 @@ export class ClientBookService {
                         }
                     }
                 });
-                return {added: true, result} as blUpdateRes;
             }
-            const result = await prisma.booklistbookOnUser.delete({
+            await prisma.booklistbookOnUser.delete({
                 where: {
                     userId_bookId: {
                         userId,
@@ -242,11 +304,11 @@ export class ClientBookService {
                     }
                 }
             })
-            return {added: false, result} as blUpdateRes;
+            return this.getBookById(bookId, userId);
         });
     }
 
-    static async updateRead(bookId: number, userId: number): Promise<blUpdateRes> {
+    static async updateRead(bookId: number, userId: number) {
         return prisma.$transaction(async (tx) => {
             const user = await prisma.user.findUnique({
                 where: { id: userId }
@@ -271,7 +333,7 @@ export class ClientBookService {
                 }
             });
             if (!rdRecord) {
-                const result = await prisma.readBooksOnUser.create({
+                await prisma.readBooksOnUser.create({
                     data: {
                         book: {
                             connect: {
@@ -285,9 +347,8 @@ export class ClientBookService {
                         }
                     }
                 });
-                return {added: true, result} as blUpdateRes;
             }
-            const result = await prisma.readBooksOnUser.delete({
+            await prisma.readBooksOnUser.delete({
                 where: {
                     userId_bookId: {
                         userId,
@@ -295,7 +356,7 @@ export class ClientBookService {
                     }
                 }
             })
-            return {added: false, result} as blUpdateRes;
+            return this.getBookById(bookId, userId);
         });
     }
 }
