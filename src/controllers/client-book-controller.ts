@@ -58,7 +58,7 @@ export class ClientBookController {
                 const bookFound = await ClientBookService.getBookById(bookId, userId);
                 const now = new Date();
                 console.log(`[${now.toLocaleTimeString()}] User ${req.user?.id} get book with id: ${bookId}.`);
-                if (bookId !== null) {
+                if (bookFound !== null) {
                     res.status(StatusCodes.OK).json(bookFound);
                 } else {
                     res.status(StatusCodes.NOT_FOUND).json({})
@@ -135,15 +135,15 @@ export class ClientBookController {
 
     static async booklistBook(req: Request, res: Response, next: NextFunction) {
         try {
-            const bookId = QuerySanitizer.sanitizeNumber(req.body.bookId, 1);
+            const bookId = QuerySanitizer.sanitizeNumber(req.params.id, 1);
             const userId = req.user?.id;
             if (bookId === undefined) {
                 res.status(StatusCodes.BAD_REQUEST).json({ error: `Incorrect book id.` });
             } else if (userId !== undefined) {
-                const blUpdated = ClientBookService.updateBooklist(bookId, userId);
+                const book = await ClientBookService.updateBooklist(bookId, userId);
                 const now = new Date();
                 console.log(`[${now.toLocaleTimeString()}] User ${userId} updated booklist with book with id: ${bookId}.`);
-                res.status(StatusCodes.OK).json(blUpdated);
+                res.status(StatusCodes.OK).json(book);
             } else {
                 next(new Error(`Can't get userId`));
             }
@@ -158,15 +158,15 @@ export class ClientBookController {
 
     static async readBook(req: Request, res: Response, next: NextFunction) {
         try {
-            const bookId = QuerySanitizer.sanitizeNumber(req.body.bookId, 1);
+            const bookId = QuerySanitizer.sanitizeNumber(req.params.id, 1);
             const userId = req.user?.id;
             if (bookId === undefined) {
                 res.status(StatusCodes.BAD_REQUEST).json({ error: `Incorrect book id.` });
             } else if (userId !== undefined) {
-                const readUpdated = ClientBookService.updateRead(bookId, userId);
+                const book = await ClientBookService.updateRead(bookId, userId);
                 const now = new Date();
                 console.log(`[${now.toLocaleTimeString()}] User ${userId} updated read books with book with id: ${bookId}.`);
-                res.status(StatusCodes.OK).json(readUpdated);
+                res.status(StatusCodes.OK).json(book);
             } else {
                 next(new Error(`Can't get userId`));
             }

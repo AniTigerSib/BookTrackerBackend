@@ -63,11 +63,13 @@ export class ClientBookService {
             books: transformBooks(category.books, userId)
         }));
 
-        result.push({
-            id: 0,
-            name: "Без категории",
-            books: transformBooks(otherBooks, userId)
-        });
+        if (otherBooks.length) {
+            result.push({
+                id: 0,
+                name: "Без категории",
+                books: transformBooks(otherBooks, userId)
+            });
+        }
         return result;
     }
 
@@ -295,15 +297,16 @@ export class ClientBookService {
                         }
                     }
                 });
-            }
-            await prisma.booklistbookOnUser.delete({
-                where: {
-                    userId_bookId: {
-                        userId,
-                        bookId
+            } else {
+                await prisma.booklistbookOnUser.delete({
+                    where: {
+                        userId_bookId: {
+                            userId,
+                            bookId
+                        }
                     }
-                }
-            })
+                });
+            }
             return this.getBookById(bookId, userId);
         });
     }
@@ -347,15 +350,16 @@ export class ClientBookService {
                         }
                     }
                 });
-            }
-            await prisma.readBooksOnUser.delete({
-                where: {
-                    userId_bookId: {
-                        userId,
-                        bookId
+            } else {
+                await prisma.readBooksOnUser.delete({
+                    where: {
+                        userId_bookId: {
+                            userId,
+                            bookId
+                        }
                     }
-                }
-            })
+                });
+            }
             return this.getBookById(bookId, userId);
         });
     }

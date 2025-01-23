@@ -45,8 +45,9 @@ export const authenticateToken = async (
         } catch (error) {
             if (error instanceof jwt.TokenExpiredError) {
                 res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Token has expired' });
+            } else {
+                res.status(StatusCodes.FORBIDDEN).json({ message: 'Invalid token' });
             }
-            res.status(StatusCodes.FORBIDDEN).json({ message: 'Invalid token' });
         }
     }
 }
